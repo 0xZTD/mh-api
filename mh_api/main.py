@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 import aiofiles
 import json
+from fastapi_pagination import Page, add_pagination, paginate
 
 app = FastAPI()
 
@@ -17,18 +18,18 @@ async def links():
 
 
 @app.get("/api/monsters")
-async def monsters():
+async def monsters() -> Page[object]:
     async with aiofiles.open(
         os.path.dirname(os.path.abspath(__file__)) + "/.tempdata/monsters-details.json",
         "r",
     ) as f:
         data = await f.read()
     monsters = json.loads(data)
-    return monsters
+    return paginate(monsters)
 
 
 @app.get("/api/monster/{item_id}")
-async def get_monster(item_id):
+async def get_monster(item_id: int):
     async with aiofiles.open(
         os.path.dirname(os.path.abspath(__file__)) + "/.tempdata/monsters-details.json",
         "r",
@@ -36,7 +37,10 @@ async def get_monster(item_id):
         data = await f.read()
     monsters = json.loads(data)
     try:
-        monster = monsters[int(item_id)]
+        monster = monsters[item_id]
         return monster
     except IndexError:
         raise HTTPException(status_code=404, detail=f"No monster with id {item_id}")
+
+
+add_pagination(app)
